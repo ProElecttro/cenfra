@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cenfra</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+    <div class="container header-inner">
+        <div class="logo">Cenfra<span>.</span></div>
+        <div class="header-subtitle">Centralized application deployment</div>
+    </div>
+</header>
+
+<main class="container">
+    <section class="page-title">
+        <h1>Deployment Dashboard</h1>
+        <p>Register GitHub repositories and manage Dockerized applications on shared infrastructure.</p>
+    </section>
+
+    <section class="card">
+        <div class="card-heading">
+            <div>
+                <h2>Register Repository</h2>
+                <p>Connect a repository to Cenfra. Pushes to the selected branch trigger deployment.</p>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="field field-wide">
+                <label for="repoSelect">Repository</label>
+                <select id="repoSelect">
+                    <option value="">Loading repositories...</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="branch">Branch</label>
+                <input id="branch" type="text" value="main" placeholder="main">
+            </div>
+
+            <div class="field">
+                <label for="appPort">Application Port</label>
+                <div class="port-input-row">
+                    <input id="appPort" type="number" min="1" max="65535" placeholder="Auto-detect or enter port">
+                    <button id="fetchPortBtn" type="button" class="button secondary port-button">Fetch Port</button>
+                </div>
+                <div id="portStatus" class="port-status">Port not detected</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button id="checkDockerBtn" class="button secondary">Check Dockerfile</button>
+            <button id="registerBtn" class="button primary" disabled>Register Repository</button>
+        </div>
+
+        <div id="dockerStatus" class="docker-status">Dockerfile not checked</div>
+        <div id="message" class="message hidden"></div>
+    </section>
+
+    <section class="card">
+        <div class="card-heading">
+            <div>
+                <h2>Hosted Repositories</h2>
+                <p>Manage repositories currently registered with Cenfra.</p>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Repository</th>
+                    <th>Branch</th>
+                    <th>App Port</th>
+                    <th>Host Port</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="deploymentsBody">
+                <tr>
+                    <td colspan="6" class="empty-cell">Loading deployments...</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<div id="confirmModal" class="modal hidden">
+    <div class="modal-card">
+        <h3 id="modalTitle">Confirm action</h3>
+        <p id="modalText"></p>
+        <div class="modal-actions">
+            <button id="modalCancel" class="button secondary">Cancel</button>
+            <button id="modalConfirm" class="button danger">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

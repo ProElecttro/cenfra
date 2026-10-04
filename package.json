@@ -1,0 +1,25 @@
+{
+  "name": "cenfra",
+  "version": "1.0.0",
+  "description": "a A centralized deployment platform that registers GitHub repositories and automatically builds and runs their Dockerized applications on shared self-hosted infrastructure, without requiring CI/CD configuration in each repository.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ProElecttro/cenfra.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ProElecttro/cenfra/issues"
+  },
+  "homepage": "https://github.com/ProElecttro/cenfra#readme",
+  "dependencies": {
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1"
+  }
+}
