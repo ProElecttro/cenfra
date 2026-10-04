@@ -1,0 +1,17 @@
+name: Deploy
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, cenfra-runner]
+
+    steps:
+      - name: Show deployment
+        run: |
+          echo "Repository: ${{ github.event.client_payload.repository }}"
+          echo "SHA:        ${{ github.event.client_payload.sha }}"
+          echo "Host port:  ${{ github.event.client_payload.host_port }}"
+          echo "App port:   ${{ github.event.client_payload.app_port }}"
