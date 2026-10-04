@@ -6,6 +6,8 @@ node_modules/
 .env.*
 !.env.example
 
+actions-runner/
+
 # Local application data
 data/
 logs/

@@ -1,0 +1,16 @@
+name: Cenfra Deploy
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, cenfra-runner]
+
+    steps:
+      - name: Show deployment request
+        run: |
+          echo "Repository: ${{ github.event.client_payload.repository }}"
+          echo "Branch:     ${{ github.event.client_payload.branch }}"
+          echo "Commit:     ${{ github.event.client_payload.sha }}"
