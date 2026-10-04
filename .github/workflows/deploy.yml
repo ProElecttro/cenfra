@@ -4,40 +4,133 @@ on:
   repository_dispatch:
     types: [deploy]
 
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Source repository"
+        required: true
+        type: string
+
+      branch:
+        description: "Source branch"
+        required: true
+        default: "main"
+        type: string
+
+      sha:
+        description: "Commit SHA"
+        required: true
+        type: string
+
+      app_port:
+        description: "Application port"
+        required: true
+        type: string
+
+      host_port:
+        description: "Host port"
+        required: true
+        type: string
+
 jobs:
   deploy:
     runs-on: [self-hosted, cenfra-runner]
 
     steps:
-      - name: Show deployment request
+      - name: Set deployment variables
+        shell: bash
         run: |
-          echo "Repository: ${{ github.event.client_payload.repository }}"
-          echo "Branch:     ${{ github.event.client_payload.branch }}"
-          echo "Commit:     ${{ github.event.client_payload.sha }}"
-          echo "Host port:  ${{ github.event.client_payload.host_port }}"
-          echo "App port:   ${{ github.event.client_payload.app_port }}"
+          REPOSITORY="${{ github.event.client_payload.repository || inputs.repository }}"
+          SHA="${{ github.event.client_payload.sha || inputs.sha }}"
+          APP_PORT="${{ github.event.client_payload.app_port || inputs.app_port }}"
+          HOST_PORT="${{ github.event.client_payload.host_port || inputs.host_port }}"
+
+          SAFE_NAME=$(echo "$REPOSITORY" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's#[^a-z0-9._-]#-#g')
+
+          echo "REPOSITORY=$REPOSITORY" >> "$GITHUB_ENV"
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+          echo "APP_PORT=$APP_PORT" >> "$GITHUB_ENV"
+          echo "HOST_PORT=$HOST_PORT" >> "$GITHUB_ENV"
+          echo "SAFE_NAME=$SAFE_NAME" >> "$GITHUB_ENV"
+
+          echo "Repository: $REPOSITORY"
+          echo "Commit:     $SHA"
+          echo "App port:  $APP_PORT"
+          echo "Host port: $HOST_PORT"
+          echo "Name:       $SAFE_NAME"
 
       - name: Checkout source repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.client_payload.repository }}
-          ref: ${{ github.event.client_payload.sha }}
+          repository: ${{ env.REPOSITORY }}
+          ref: ${{ env.SHA }}
           token: ${{ secrets.HOSTING_GH_TOKEN }}
+          path: source
 
-      - name: Verify Dockerfile
+      - name: Validate Dockerfile
+        shell: bash
         run: |
-          test -f Dockerfile
-          echo "Dockerfile found"
+          if [ ! -f source/Dockerfile ]; then
+            echo "ERROR: Dockerfile not found."
+            exit 1
+          fi
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t cenfra-${{ github.event.client_payload.repository }}:${{ github.event.client_payload.sha }} \
-            .
+          echo "Dockerfile found."
 
-      - name: Run application
+      - name: Create Docker Compose configuration
+        shell: bash
         run: |
-          docker run -d \
-            --name cenfra-${{ github.event.client_payload.repository }} \
-            -p ${{ github.event.client_payload.host_port }}:${{ github.event.client_payload.app_port }} \
-            cenfra-${{ github.event.client_payload.repository }}:${{ github.event.client_payload.sha }}
+          DEPLOY_DIR="$HOME/.cenfra/deployments/$SAFE_NAME"
+
+          mkdir -p "$DEPLOY_DIR"
+
+          cat > "$DEPLOY_DIR/docker-compose.yml" <<EOF
+          services:
+            app:
+              build:
+                context: ${GITHUB_WORKSPACE}/source
+                dockerfile: Dockerfile
+              image: cenfra/${SAFE_NAME}:${SHA}
+              container_name: cenfra-${SAFE_NAME}
+              environment:
+                PORT: "${APP_PORT}"
+              ports:
+                - "${HOST_PORT}:${APP_PORT}"
+              restart: unless-stopped
+          EOF
+
+          echo "Compose configuration:"
+          cat "$DEPLOY_DIR/docker-compose.yml"
+
+      - name: Build and start application
+        shell: bash
+        run: |
+          DEPLOY_DIR="$HOME/.cenfra/deployments/$SAFE_NAME"
+
+          docker compose \
+            -p "$SAFE_NAME" \
+            -f "$DEPLOY_DIR/docker-compose.yml" \
+            up -d --build --remove-orphans
+
+      - name: Verify deployment
+        shell: bash
+        run: |
+          DEPLOY_DIR="$HOME/.cenfra/deployments/$SAFE_NAME"
+
+          docker compose \
+            -p "$SAFE_NAME" \
+            -f "$DEPLOY_DIR/docker-compose.yml" \
+            ps
+
+          echo ""
+          echo "Container:"
+          docker ps \
+            --filter "name=^/cenfra-${SAFE_NAME}$" \
+            --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+      - name: Cleanup unused images
+        shell: bash
+        run: |
+          docker image prune -f
