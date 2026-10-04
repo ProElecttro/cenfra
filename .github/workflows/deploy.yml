@@ -4,6 +4,24 @@ on:
   repository_dispatch:
     types: [deploy]
 
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Source repository"
+        required: true
+        type: string
+
+      branch:
+        description: "Source branch"
+        required: true
+        default: "main"
+        type: string
+
+      sha:
+        description: "Commit SHA"
+        required: true
+        type: string
+
 jobs:
   deploy:
     runs-on: [self-hosted, cenfra-runner]
@@ -11,6 +29,23 @@ jobs:
     steps:
       - name: Show deployment request
         run: |
-          echo "Repository: ${{ github.event.client_payload.repository }}"
-          echo "Branch:     ${{ github.event.client_payload.branch }}"
-          echo "Commit:     ${{ github.event.client_payload.sha }}"
+          echo "======================================"
+          echo "           CENFRA DEPLOY"
+          echo "======================================"
+
+          echo "Repository:"
+          echo "${{ github.event.client_payload.repository || inputs.repository }}"
+
+          echo "Branch:"
+          echo "${{ github.event.client_payload.branch || inputs.branch }}"
+
+          echo "Commit:"
+          echo "${{ github.event.client_payload.sha || inputs.sha }}"
+
+          echo "Runner:"
+          echo "$RUNNER_NAME"
+
+          echo "OS:"
+          uname -a
+
+          echo "======================================"
