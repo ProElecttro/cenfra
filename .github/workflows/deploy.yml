@@ -4,24 +4,6 @@ on:
   repository_dispatch:
     types: [deploy]
 
-  workflow_dispatch:
-    inputs:
-      repository:
-        description: "Source repository"
-        required: true
-        type: string
-
-      branch:
-        description: "Source branch"
-        required: true
-        default: "main"
-        type: string
-
-      sha:
-        description: "Commit SHA"
-        required: true
-        type: string
-
 jobs:
   deploy:
     runs-on: [self-hosted, cenfra-runner]
@@ -29,23 +11,33 @@ jobs:
     steps:
       - name: Show deployment request
         run: |
-          echo "======================================"
-          echo "           CENFRA DEPLOY"
-          echo "======================================"
+          echo "Repository: ${{ github.event.client_payload.repository }}"
+          echo "Branch:     ${{ github.event.client_payload.branch }}"
+          echo "Commit:     ${{ github.event.client_payload.sha }}"
+          echo "Host port:  ${{ github.event.client_payload.host_port }}"
+          echo "App port:   ${{ github.event.client_payload.app_port }}"
 
-          echo "Repository:"
-          echo "${{ github.event.client_payload.repository || inputs.repository }}"
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.client_payload.repository }}
+          ref: ${{ github.event.client_payload.sha }}
+          token: ${{ secrets.HOSTING_GH_TOKEN }}
 
-          echo "Branch:"
-          echo "${{ github.event.client_payload.branch || inputs.branch }}"
+      - name: Verify Dockerfile
+        run: |
+          test -f Dockerfile
+          echo "Dockerfile found"
 
-          echo "Commit:"
-          echo "${{ github.event.client_payload.sha || inputs.sha }}"
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t cenfra-${{ github.event.client_payload.repository }}:${{ github.event.client_payload.sha }} \
+            .
 
-          echo "Runner:"
-          echo "$RUNNER_NAME"
-
-          echo "OS:"
-          uname -a
-
-          echo "======================================"
+      - name: Run application
+        run: |
+          docker run -d \
+            --name cenfra-${{ github.event.client_payload.repository }} \
+            -p ${{ github.event.client_payload.host_port }}:${{ github.event.client_payload.app_port }} \
+            cenfra-${{ github.event.client_payload.repository }}:${{ github.event.client_payload.sha }}
