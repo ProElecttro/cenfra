@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Local application data
+data/
+logs/
+tmp/
+temp/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vim / editor backup files
+*~
+*.bak
+*.tmp
+
+# OS / filesystem metadata
+.Trashes
+.fseventsd
+.Spotlight-V100
+
+# Build / coverage output
+dist/
+build/
+coverage/
+.cache/
+
+# Runtime files
+*.pid
+*.pid.lock
+
+# Local Docker / development files
+docker-compose.override.yml
+
+# Misc
+*.orig
